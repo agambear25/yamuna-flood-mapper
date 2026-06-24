@@ -15,6 +15,9 @@ data/raw/
 cache/
 **/cache/
 
+# Large regenerable ML training table (rebuilt by phase2/05)
+phase2/training_data.csv
+
 # Earth Engine / credentials — never commit secrets
 *.credentials
 .config/earthengine/

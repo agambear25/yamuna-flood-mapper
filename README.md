@@ -1,19 +1,23 @@
 # Yamuna Urban Flood Mapper — Delhi
 
-Detecting the **July 2023 Yamuna flood** from satellite radar, and building a validated **urban flood-risk map** for the Delhi floodplain — entirely in Python / Jupyter, with no paid data and no desktop GIS.
+Detecting the **July 2023 Yamuna flood** from satellite radar, then building and **machine-learning-validating** an urban flood-risk model for the Delhi floodplain — and translating it into *people at risk*. Entirely in Python / Jupyter, with open data and no desktop GIS.
 
-![Flood risk map](data/outputs/yamuna_flood_risk_2023.png)
+> 📊 **Interactive dashboard:** open [`index.html`](index.html) locally, or enable GitHub Pages to publish it.
+
+![Flood risk map](data/outputs/dashboard_risk_map.png)
 
 ---
 
 ## What this project does
 
-In July 2023 the Yamuna crossed a record **208.66 m** and inundated large parts of the Delhi floodplain. This project turns open satellite data into two things:
+In July 2023 the Yamuna crossed a record **208.66 m** and inundated large parts of the Delhi floodplain. This project turns open satellite data into:
 
-1. **Observed flood extent** — where it actually flooded, detected from Sentinel-1 radar change detection.
-2. **A flood-risk map** — where flooding is *likely in general*, built from terrain and hydrology, and **validated against the real 2023 flood**. The risk surface is then used to rank major roads, as a starting point for warning motorists about flood-prone stretches.
+1. **Observed flood extent** (Phase 1) — where it actually flooded, from Sentinel-1 radar change detection.
+2. **A flood-risk model** — where flooding is *likely in general*, built two ways and validated against the real flood:
+   - **Phase 1:** a transparent **weighted overlay** of terrain factors (AUC 0.84).
+   - **Phase 2:** an **XGBoost** model with spatial cross-validation (AUC 0.92), explained with SHAP and translated into **people at risk** per district.
 
-The whole pipeline is four notebooks, each explained step by step for someone new to GIS.
+Everything is documented step by step for someone new to GIS.
 
 ---
 
@@ -22,70 +26,85 @@ The whole pipeline is four notebooks, each explained step by step for someone ne
 | Result | Value |
 |---|---|
 | Observed flood extent (Jul 2023, SAR) | **~29 km²** within the Delhi corridor |
-| Risk model validation (AUC vs. SAR flood) | **0.84** |
-| Strongest single risk factor | Distance to river (AUC 0.85) |
+| Phase 1 risk model (weighted overlay) | AUC **0.84** |
+| Phase 2 risk model (XGBoost, **spatial** CV) | AUC **0.92** |
+| People in high-susceptibility zones | **~613,000** |
 | Area mapped | ~610 km² Yamuna corridor, 10 m resolution |
 
-**Top flood-risk roads** (highest mean risk along the segment — a draft motorist watch-list):
+**Most exposed districts** (residents in high-susceptibility zones):
 
-| Road | Risk |
-|---|---|
-| DND KMP Expressway | 0.90 |
-| Kalindi Kunj Bridge | 0.89 |
-| Noida–Greater Noida Expressway | 0.89 |
-| Mahamaya Flyover Ramp | 0.89 |
-| Maharaja Agrasen Marg Underpass | 0.89 |
-
-These line up with genuinely flood-prone Yamuna crossings — a good sanity check.
+| District | Population | At risk | % |
+|---|--:|--:|--:|
+| East Delhi | 1,198,228 | 183,609 | 15.3 |
+| Central Delhi | 1,305,585 | 173,388 | 13.3 |
+| North East Delhi | 1,379,113 | 79,962 | 5.8 |
+| North Delhi | 307,867 | 58,733 | 19.1 |
 
 ### Observed flood extent (July 2023)
 
-![Observed flood extent](data/outputs/yamuna_flood_extent_2023.png)
+![Observed flood extent](data/outputs/dashboard_flood_extent.png)
 
 ---
 
 ## How it works
 
 ```
-Sentinel-1 SAR (pre + post)  ──►  change detection  ──►  flood mask  ─┐
-                                                                      │ validates
-Elevation · slope · distance-to-river · built-up  ──►  weighted  ──►  risk surface  ──►  ranked roads
-                                                       overlay
+Sentinel-1 SAR (pre + post) ─► change detection ─► flood mask ──────────────┐ (labels)
+                                                                            │
+Elevation · slope · distance-to-river · built-up ──► weighted overlay ──► risk map  (Phase 1)
+        + HAND · curvature · local relief ─────────► XGBoost (spatial CV) ─► ML susceptibility  (Phase 2)
+                                                                            └─► × WorldPop ─► people at risk
 ```
 
-1. **`01_get_sar_data`** — pull pre-flood (June) and post-flood (mid-July 2023) Sentinel-1 VV composites from Google Earth Engine and download them as GeoTIFFs.
-2. **`02_flood_mask`** — speckle-filter, subtract before/after (water makes radar go dark), threshold at −3 dB → binary flood mask.
-3. **`03_context_layers`** — build the risk factors (Copernicus DEM, slope, distance to the Yamuna, ESA WorldCover built-up), all aligned to the flood-mask grid.
-4. **`04_risk_map`** — combine factors into a flood-risk score (*multi-criteria weighted overlay*), validate against the SAR flood, classify into zones, rank roads, and render the maps.
+**Phase 1 — `notebooks/`**
+1. `01_get_sar_data` — pull pre/post Sentinel-1 VV composites from Google Earth Engine.
+2. `02_flood_mask` — speckle filter, change-detect, threshold → binary flood mask.
+3. `03_context_layers` — DEM, slope, distance-to-river, built-up, aligned to the flood grid.
+4. `04_risk_map` — weighted-overlay risk, validation, road ranking, maps.
 
-The risk model uses **no training data** — it's a transparent weighted overlay, which sidesteps the circularity and label problems of fitting an ML model to a single flood event.
+**Phase 2 — `phase2/`**
+5. `05_feature_table` — engineer HAND/curvature/relief, build a balanced training table.
+6. `06_train_xgboost` — train XGBoost; **random vs. spatial cross-validation**; SHAP.
+7. `07_predict_susceptibility` — apply the model city-wide; compare to Phase 1.
+8. `08_economic_risk` — overlay WorldPop population → people at risk by district.
+
+`build_dashboard.py` assembles everything into `index.html`.
+
+---
+
+## Why the validation is honest
+
+Geospatial data is spatially auto-correlated, so ordinary random cross-validation **leaks** neighbouring pixels and inflates the score. We report both:
+
+```
+Random  CV AUC: 0.97   ← optimistic (leakage)
+Spatial CV AUC: 0.92   ← honest (block cross-validation)  ← reported
+```
+
+The SHAP analysis shows **distance-to-river** and **HAND** as the dominant drivers, with **built-up** pushing predictions toward "dry."
 
 ---
 
 ## ⚠️ Honest limitations
 
-This project is deliberately upfront about what it does and doesn't show:
+- **SAR detects *riverine* flooding, not street waterlogging.** It's largely blind to shallow water between buildings — the kind that strands motorists. The road ranking reflects floodplain exposure, not live street flooding.
+- **`built-up` partly encodes a sensor blind-spot.** The model leans on it because SAR can't see flooding *inside* built-up areas — so "built-up → dry" is partly bias, not safety.
+- **Single-event labels, relative risk.** Validated against one flood (July 2023); risk is relative within the AOI. "People at risk" is an *exposure* estimate, not a casualty forecast.
 
-- **SAR detects *riverine* flooding, not street waterlogging.** Radar sees open water on the floodplain well, but it is largely blind to shallow water trapped between buildings — the kind that actually strands motorists. The road ranking here reflects *floodplain exposure*, not live street flooding.
-- **The risk map is *relative* within this AOI** (percentile-scaled), and is validated against a **single event** (July 2023). It captures *where* flooding concentrates, not an absolute probability.
-- **Built-up area anti-correlates with this flood** (AUC 0.30): Delhi's built-up areas sit on higher ground than the floodplain. It would matter for *pluvial* (rain-driven) waterlogging — a v2 goal — so it's kept at low weight here.
-
-These aren't bugs — they define the scope honestly.
+These define the scope honestly — and point straight at what a v3 would fix.
 
 ---
 
 ## Reproduce it
 
 ```bash
-# 1. Create the environment (needs conda / miniconda)
 conda env create -f environment.yml
 conda activate yamuna-flood
-
-# 2. Launch Jupyter and run the notebooks in order
-jupyter lab
+jupyter lab          # run notebooks/01–04, then phase2/05–08
+python build_dashboard.py   # regenerate index.html
 ```
 
-You'll need a (free) **Google Earth Engine** account. In `01_get_sar_data.ipynb`, set `EE_PROJECT` to your Earth Engine Cloud project, then run the notebooks `01 → 04` top to bottom.
+You'll need a free **Google Earth Engine** account; set `EE_PROJECT` in `01_get_sar_data.ipynb`.
 
 ---
 
@@ -93,14 +112,20 @@ You'll need a (free) **Google Earth Engine** account. In `01_get_sar_data.ipynb`
 
 ```
 yamuna-flood-mapper/
-├── notebooks/
-│   ├── 01_get_sar_data.ipynb     # Sentinel-1 from Google Earth Engine
-│   ├── 02_flood_mask.ipynb       # SAR change detection → flood mask
-│   ├── 03_context_layers.ipynb   # DEM, slope, distance-to-river, built-up
-│   └── 04_risk_map.ipynb         # weighted-overlay risk + validation + maps
-├── data/
-│   ├── aoi.geojson               # area of interest
-│   └── outputs/                  # maps, risk surface, ranked roads
+├── notebooks/            # Phase 1 — SAR flood detection + weighted-overlay risk
+│   ├── 01_get_sar_data.ipynb
+│   ├── 02_flood_mask.ipynb
+│   ├── 03_context_layers.ipynb
+│   └── 04_risk_map.ipynb
+├── phase2/               # Phase 2 — ML susceptibility + exposure
+│   ├── 05_feature_table.ipynb
+│   ├── 06_train_xgboost.ipynb
+│   ├── 07_predict_susceptibility.ipynb
+│   ├── 08_economic_risk.ipynb
+│   └── flood_model.json  # trained XGBoost model
+├── data/outputs/         # maps, risk surfaces, ranked roads, district scores
+├── build_dashboard.py    # builds the dashboard
+├── index.html            # the dashboard
 ├── environment.yml
 └── README.md
 ```
@@ -114,18 +139,18 @@ yamuna-flood-mapper/
 | Dataset | Source | Used for |
 |---|---|---|
 | Sentinel-1 GRD (SAR) | ESA, via Google Earth Engine | Flood detection |
-| Copernicus GLO-30 DEM | ESA, via Earth Engine | Elevation, slope |
+| Copernicus GLO-30 DEM | ESA, via Earth Engine | Elevation, slope, HAND |
 | ESA WorldCover 10 m | ESA, via Earth Engine | Built-up surface |
-| River & road network | OpenStreetMap (`osmnx`) | Distance-to-river, road ranking |
+| WorldPop 100 m (2020) | WorldPop, via Earth Engine | Population exposure |
+| River, road & district boundaries | OpenStreetMap (`osmnx`) | Distance-to-river, roads, districts |
 
 ---
 
-## Roadmap (v2)
+## Roadmap (v3)
 
-- Replace the weighted overlay with an **XGBoost** model trained on assembled urban-waterlogging labels (traffic-police / PWD hotspot lists), with **spatial cross-validation**.
-- Add **rainfall** (GPM IMERG) as a trigger so risk becomes rainfall-conditioned.
-- Move from floodplain exposure toward true **pluvial street-flooding** prediction for motorist alerts.
+- Move from floodplain exposure to true **pluvial street-flooding** using assembled urban-waterlogging labels (traffic-police / PWD hotspots).
+- Add **rainfall** (GPM IMERG) so risk becomes rainfall-conditioned, toward live motorist alerts.
 
 ---
 
-*Built with Sentinel-1, Google Earth Engine, rasterio, geopandas, and matplotlib.*
+*Built with Sentinel-1, Google Earth Engine, rasterio, geopandas, xgboost, shap, and matplotlib.*

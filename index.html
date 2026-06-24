@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Yamuna Urban Flood Risk · Delhi</title>
+<style>
+  :root { --ink:#1a2b3c; --muted:#5a6b7c; --line:#e3e8ee; --bg:#f6f8fa; --card:#ffffff; --accent:#1c7ed6; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+          color:var(--ink); background:var(--bg); line-height:1.55; }
+  .wrap { max-width:1100px; margin:0 auto; padding:0 22px 60px; }
+  header { background:linear-gradient(135deg,#0b3d70,#1c7ed6); color:#fff; padding:42px 0 34px; }
+  header .wrap { padding-bottom:0; }
+  h1 { margin:0 0 6px; font-size:30px; font-weight:650; letter-spacing:-0.2px; }
+  .tag { font-size:15px; opacity:.92; max-width:720px; }
+  .meta { margin-top:14px; font-size:12.5px; opacity:.8; }
+  .kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin:-26px 0 30px; }
+  .kpi { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px 16px;
+          box-shadow:0 1px 3px rgba(20,40,70,.06); }
+  .kpi-v { font-size:26px; font-weight:680; color:var(--ink); }
+  .kpi-l { font-size:13px; font-weight:600; margin-top:2px; }
+  .kpi-s { font-size:11.5px; color:var(--muted); margin-top:2px; }
+  h2 { font-size:19px; margin:34px 0 12px; font-weight:620; }
+  .lead { font-size:13.5px; color:var(--muted); margin:-4px 0 14px; max-width:760px; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:22px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px;
+           box-shadow:0 1px 3px rgba(20,40,70,.06); }
+  .card img { width:100%; border-radius:8px; display:block; }
+  .cap { font-size:12.5px; color:var(--muted); margin-top:8px; }
+  table { width:100%; border-collapse:collapse; font-size:13.5px; }
+  th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); }
+  th { font-size:11.5px; text-transform:uppercase; letter-spacing:.4px; color:var(--muted); }
+  td.rnum { font-variant-numeric:tabular-nums; font-weight:600; text-align:right; width:54px; }
+  .rbar { display:inline-block; width:120px; height:8px; background:#eef1f4; border-radius:4px; overflow:hidden; vertical-align:middle; }
+  .rbar span { display:block; height:100%; background:linear-gradient(90deg,#fd8d3c,#800026); }
+  .zrow { display:flex; align-items:center; gap:10px; margin:9px 0; font-size:13.5px; }
+  .zname { width:78px; }
+  .zbar { flex:1; height:11px; background:#eef1f4; border-radius:6px; overflow:hidden; }
+  .zbar span { display:block; height:100%; }
+  .zval { width:64px; text-align:right; font-variant-numeric:tabular-nums; color:var(--muted); }
+  iframe { width:100%; height:520px; border:1px solid var(--line); border-radius:10px; }
+  .note { background:#fff8e6; border:1px solid #ffe39e; border-radius:10px; padding:14px 16px; font-size:13px; }
+  .note b { color:#9a6b00; }
+  footer { margin-top:40px; padding-top:18px; border-top:1px solid var(--line); font-size:12.5px; color:var(--muted); }
+  a { color:var(--accent); text-decoration:none; }
+  @media (max-width:760px) { .kpis{grid-template-columns:repeat(2,1fr);} .grid2{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1>Yamuna Urban Flood Risk · Delhi</h1>
+  <div class="tag">Sentinel-1 SAR detection of the July 2023 flood, and a flood-risk model
+  validated against it — built end-to-end in Python.</div>
+  <div class="meta">Area of interest: Yamuna corridor, Delhi (28.50–28.78°N, 77.18–77.38°E) · 10 m resolution</div>
+</div></header>
+
+<div class="wrap">
+  <div class="kpis">
+    <div class="kpi"><div class="kpi-v">29 km²</div><div class="kpi-l">Observed flood</div><div class="kpi-s">SAR, July 2023</div></div>
+    <div class="kpi"><div class="kpi-v">0.84 &rarr; 0.92</div><div class="kpi-l">Model AUC</div><div class="kpi-s">overlay &rarr; ML</div></div>
+    <div class="kpi"><div class="kpi-v">613k</div><div class="kpi-l">People at risk</div><div class="kpi-s">in high-risk zones</div></div>
+    <div class="kpi"><div class="kpi-v">610 km²</div><div class="kpi-l">Area mapped</div><div class="kpi-s">10 m grid</div></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card"><img src="data/outputs/dashboard_risk_map.png" alt="Flood risk map"/>
+      <div class="cap">Relative flood risk from a weighted overlay of elevation, distance-to-river, slope and built-up surface.</div></div>
+    <div class="card"><img src="data/outputs/dashboard_flood_extent.png" alt="Observed flood extent"/>
+      <div class="cap">Flood extent detected from Sentinel-1 radar change detection (June vs. July 2023).</div></div>
+  </div>
+
+  <h2>Risk-zone breakdown</h2>
+  <div class="card"><div class="zrow"><span class="zname">Very High</span><span class="zbar"><span style="width:25%;background:#800026"></span></span><span class="zval">152 km²</span></div><div class="zrow"><span class="zname">High</span><span class="zbar"><span style="width:25%;background:#e31a1c"></span></span><span class="zval">152 km²</span></div><div class="zrow"><span class="zname">Medium</span><span class="zbar"><span style="width:25%;background:#fd8d3c"></span></span><span class="zval">152 km²</span></div><div class="zrow"><span class="zname">Low</span><span class="zbar"><span style="width:25%;background:#fed976"></span></span><span class="zval">152 km²</span></div></div>
+
+  <h2>Highest-risk roads &mdash; motorist watch-list</h2>
+  <div class="card"><table>
+    <tr><th>#</th><th>Road</th><th>Risk</th><th class="rnum">Score</th></tr>
+    <tr><td>1</td><td>Jhasi Rani Lakshmibai Road</td><td><span class="rbar"><span style="width:96%"></span></span></td><td class="rnum">0.96</td></tr><tr><td>2</td><td>DND KMP Expressway</td><td><span class="rbar"><span style="width:95%"></span></span></td><td class="rnum">0.95</td></tr><tr><td>3</td><td>Bandh Road</td><td><span class="rbar"><span style="width:95%"></span></span></td><td class="rnum">0.95</td></tr><tr><td>4</td><td>Baba Banda Singh Bahadur Setu Ramp</td><td><span class="rbar"><span style="width:94%"></span></span></td><td class="rnum">0.94</td></tr><tr><td>5</td><td>Vishwakarma Flyover, Jhasi Rani Lakshmibai Road</td><td><span class="rbar"><span style="width:93%"></span></span></td><td class="rnum">0.93</td></tr><tr><td>6</td><td>Dadri Main Road</td><td><span class="rbar"><span style="width:93%"></span></span></td><td class="rnum">0.93</td></tr><tr><td>7</td><td>Aurangzeb Road</td><td><span class="rbar"><span style="width:93%"></span></span></td><td class="rnum">0.93</td></tr><tr><td>8</td><td>Udyog Marg</td><td><span class="rbar"><span style="width:93%"></span></span></td><td class="rnum">0.93</td></tr><tr><td>9</td><td>Maharaja Agrasen Marg Underpass</td><td><span class="rbar"><span style="width:92%"></span></span></td><td class="rnum">0.93</td></tr><tr><td>10</td><td>Kalindi Kunj Bridge</td><td><span class="rbar"><span style="width:92%"></span></span></td><td class="rnum">0.92</td></tr>
+  </table>
+  <div class="cap">Mean modelled flood risk along each major road. A starting point for driver advisories.</div></div>
+
+  <h2>Explore the interactive map</h2>
+  <div class="card"><iframe src="data/outputs/yamuna_flood_risk_interactive.html" title="Interactive flood risk map"></iframe></div>
+
+  <h2>Phase 2 &mdash; machine-learning model</h2>
+  <p class="lead">An XGBoost model trained on the SAR flood with seven terrain features, validated by
+  <b>spatial</b> cross-validation (AUC 0.92, vs. 0.84 for the weighted overlay).
+  Ordinary random CV would report 0.97 &mdash; that gap is spatial leakage, which spatial CV removes.</p>
+  <div class="grid2">
+    <div class="card"><img src="data/outputs/compare_overlay_vs_ml.png" alt="overlay vs ML"/>
+      <div class="cap">Observed flood vs. Phase 1 overlay vs. Phase 2 ML &mdash; the ML map resolves finer floodplain structure.</div></div>
+    <div class="card"><img src="data/outputs/shap_summary.png" alt="SHAP feature importance"/>
+      <div class="cap">SHAP: distance-to-river and HAND drive risk; built-up pushes toward &ldquo;dry&rdquo; (a SAR blind-spot, not safety).</div></div>
+  </div>
+
+  <h2>People at risk by district</h2>
+  <div class="grid2">
+    <div class="card"><img src="data/outputs/people_at_risk_by_district.png" alt="people at risk by district"/></div>
+    <div class="card"><table>
+      <tr><th>District</th><th class="rnum">Population</th><th class="rnum">At risk</th><th class="rnum">%</th></tr>
+      <tr><td>East Delhi</td><td class="rnum">1,198,228</td><td class="rnum">183,609</td><td class="rnum">15.3</td></tr><tr><td>Central Delhi</td><td class="rnum">1,305,585</td><td class="rnum">173,388</td><td class="rnum">13.3</td></tr><tr><td>North East Delhi</td><td class="rnum">1,379,113</td><td class="rnum">79,962</td><td class="rnum">5.8</td></tr><tr><td>North Delhi</td><td class="rnum">307,867</td><td class="rnum">58,733</td><td class="rnum">19.1</td></tr><tr><td>South East Delhi</td><td class="rnum">1,352,249</td><td class="rnum">45,581</td><td class="rnum">3.4</td></tr><tr><td>Gautam Buddha Nagar</td><td class="rnum">835,442</td><td class="rnum">31,419</td><td class="rnum">3.8</td></tr><tr><td>Ghaziabad</td><td class="rnum">1,584,275</td><td class="rnum">27,158</td><td class="rnum">1.7</td></tr><tr><td>Shahdara</td><td class="rnum">1,333,785</td><td class="rnum">9,168</td><td class="rnum">0.7</td></tr>
+    </table><div class="cap">Residents where modelled susceptibility &ge; 0.5 (WorldPop 2020). ~613k people total.</div></div>
+  </div>
+
+  <h2>Method &amp; honest limitations</h2>
+  <div class="note">
+    <b>What this shows:</b> riverine floodplain risk, validated against a real event.
+    <b>What it doesn't:</b> SAR is largely blind to shallow street-waterlogging between buildings,
+    so the road ranking reflects floodplain exposure, not live street flooding. Risk is
+    <i>relative</i> within this area and validated on a single event. Built-up area anti-correlates
+    with this riverine flood (it sits on higher ground) and is weighted low. A machine-learning
+    Phase&nbsp;2 extends this with spatial cross-validation and population exposure.
+  </div>
+
+  <footer>
+    Data: ESA Sentinel-1 &amp; Copernicus DEM and ESA WorldCover (via Google Earth Engine),
+    OpenStreetMap. Built with rasterio, geopandas, matplotlib, folium.
+  </footer>
+</div>
+</body>
+</html>

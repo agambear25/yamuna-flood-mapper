@@ -31,3 +31,7 @@ dependencies:
   - requests
   - tqdm
   - pip
+  # --- Phase 2: machine-learning susceptibility model ---
+  - xgboost
+  - scikit-learn
+  - shap

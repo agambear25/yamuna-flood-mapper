@@ -1,0 +1,14 @@
+district,population,pop_at_risk,pct_at_risk,mean_susceptibility
+East Delhi,1198228,183609,15.3,0.289
+Central Delhi,1305585,173388,13.3,0.304
+North East Delhi,1379113,79962,5.8,0.262
+North Delhi,307867,58733,19.1,0.261
+South East Delhi,1352249,45581,3.4,0.079
+Gautam Buddha Nagar,835442,31419,3.8,0.118
+Ghaziabad,1584275,27158,1.7,0.148
+Shahdara,1333785,9168,0.7,0.036
+Faridabad,15389,3586,23.3,0.451
+North West Delhi,24185,220,0.9,0.04
+New Delhi,193179,17,0.0,0.018
+West Delhi,48303,0,0.0,0.007
+South Delhi,617918,0,0.0,0.017
