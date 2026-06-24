@@ -1,0 +1,20 @@
+# Jupyter / Python
+.ipynb_checkpoints/
+__pycache__/
+*.pyc
+
+# Large rasters — regenerated from notebooks, not committed to git
+*.tif
+*.tiff
+data/raw/
+
+# OS / editor cruft
+.DS_Store
+
+# osmnx / API response cache
+cache/
+**/cache/
+
+# Earth Engine / credentials — never commit secrets
+*.credentials
+.config/earthengine/

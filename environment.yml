@@ -1,0 +1,33 @@
+name: yamuna-flood
+channels:
+  - conda-forge
+dependencies:
+  # --- core scientific python ---
+  - python=3.11
+  - numpy
+  - scipy
+  - pandas
+  - matplotlib
+  # --- geospatial raster + vector stack ---
+  - rasterio
+  - rioxarray
+  - xarray
+  - geopandas
+  - shapely
+  - pyproj
+  - fiona
+  # --- mapping / basemaps / interactive ---
+  - contextily
+  - folium
+  - osmnx
+  # --- google earth engine + interactive previews ---
+  - earthengine-api
+  - geemap
+  # --- notebook environment ---
+  - jupyterlab
+  - ipykernel
+  - ipywidgets
+  # --- misc helpers ---
+  - requests
+  - tqdm
+  - pip

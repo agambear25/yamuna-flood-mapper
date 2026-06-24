@@ -1,0 +1,131 @@
+# Yamuna Urban Flood Mapper — Delhi
+
+Detecting the **July 2023 Yamuna flood** from satellite radar, and building a validated **urban flood-risk map** for the Delhi floodplain — entirely in Python / Jupyter, with no paid data and no desktop GIS.
+
+![Flood risk map](data/outputs/yamuna_flood_risk_2023.png)
+
+---
+
+## What this project does
+
+In July 2023 the Yamuna crossed a record **208.66 m** and inundated large parts of the Delhi floodplain. This project turns open satellite data into two things:
+
+1. **Observed flood extent** — where it actually flooded, detected from Sentinel-1 radar change detection.
+2. **A flood-risk map** — where flooding is *likely in general*, built from terrain and hydrology, and **validated against the real 2023 flood**. The risk surface is then used to rank major roads, as a starting point for warning motorists about flood-prone stretches.
+
+The whole pipeline is four notebooks, each explained step by step for someone new to GIS.
+
+---
+
+## Key results
+
+| Result | Value |
+|---|---|
+| Observed flood extent (Jul 2023, SAR) | **~29 km²** within the Delhi corridor |
+| Risk model validation (AUC vs. SAR flood) | **0.84** |
+| Strongest single risk factor | Distance to river (AUC 0.85) |
+| Area mapped | ~610 km² Yamuna corridor, 10 m resolution |
+
+**Top flood-risk roads** (highest mean risk along the segment — a draft motorist watch-list):
+
+| Road | Risk |
+|---|---|
+| DND KMP Expressway | 0.90 |
+| Kalindi Kunj Bridge | 0.89 |
+| Noida–Greater Noida Expressway | 0.89 |
+| Mahamaya Flyover Ramp | 0.89 |
+| Maharaja Agrasen Marg Underpass | 0.89 |
+
+These line up with genuinely flood-prone Yamuna crossings — a good sanity check.
+
+### Observed flood extent (July 2023)
+
+![Observed flood extent](data/outputs/yamuna_flood_extent_2023.png)
+
+---
+
+## How it works
+
+```
+Sentinel-1 SAR (pre + post)  ──►  change detection  ──►  flood mask  ─┐
+                                                                      │ validates
+Elevation · slope · distance-to-river · built-up  ──►  weighted  ──►  risk surface  ──►  ranked roads
+                                                       overlay
+```
+
+1. **`01_get_sar_data`** — pull pre-flood (June) and post-flood (mid-July 2023) Sentinel-1 VV composites from Google Earth Engine and download them as GeoTIFFs.
+2. **`02_flood_mask`** — speckle-filter, subtract before/after (water makes radar go dark), threshold at −3 dB → binary flood mask.
+3. **`03_context_layers`** — build the risk factors (Copernicus DEM, slope, distance to the Yamuna, ESA WorldCover built-up), all aligned to the flood-mask grid.
+4. **`04_risk_map`** — combine factors into a flood-risk score (*multi-criteria weighted overlay*), validate against the SAR flood, classify into zones, rank roads, and render the maps.
+
+The risk model uses **no training data** — it's a transparent weighted overlay, which sidesteps the circularity and label problems of fitting an ML model to a single flood event.
+
+---
+
+## ⚠️ Honest limitations
+
+This project is deliberately upfront about what it does and doesn't show:
+
+- **SAR detects *riverine* flooding, not street waterlogging.** Radar sees open water on the floodplain well, but it is largely blind to shallow water trapped between buildings — the kind that actually strands motorists. The road ranking here reflects *floodplain exposure*, not live street flooding.
+- **The risk map is *relative* within this AOI** (percentile-scaled), and is validated against a **single event** (July 2023). It captures *where* flooding concentrates, not an absolute probability.
+- **Built-up area anti-correlates with this flood** (AUC 0.30): Delhi's built-up areas sit on higher ground than the floodplain. It would matter for *pluvial* (rain-driven) waterlogging — a v2 goal — so it's kept at low weight here.
+
+These aren't bugs — they define the scope honestly.
+
+---
+
+## Reproduce it
+
+```bash
+# 1. Create the environment (needs conda / miniconda)
+conda env create -f environment.yml
+conda activate yamuna-flood
+
+# 2. Launch Jupyter and run the notebooks in order
+jupyter lab
+```
+
+You'll need a (free) **Google Earth Engine** account. In `01_get_sar_data.ipynb`, set `EE_PROJECT` to your Earth Engine Cloud project, then run the notebooks `01 → 04` top to bottom.
+
+---
+
+## Repository structure
+
+```
+yamuna-flood-mapper/
+├── notebooks/
+│   ├── 01_get_sar_data.ipynb     # Sentinel-1 from Google Earth Engine
+│   ├── 02_flood_mask.ipynb       # SAR change detection → flood mask
+│   ├── 03_context_layers.ipynb   # DEM, slope, distance-to-river, built-up
+│   └── 04_risk_map.ipynb         # weighted-overlay risk + validation + maps
+├── data/
+│   ├── aoi.geojson               # area of interest
+│   └── outputs/                  # maps, risk surface, ranked roads
+├── environment.yml
+└── README.md
+```
+
+*(Large intermediate rasters are regenerated by the notebooks and are git-ignored.)*
+
+---
+
+## Data sources
+
+| Dataset | Source | Used for |
+|---|---|---|
+| Sentinel-1 GRD (SAR) | ESA, via Google Earth Engine | Flood detection |
+| Copernicus GLO-30 DEM | ESA, via Earth Engine | Elevation, slope |
+| ESA WorldCover 10 m | ESA, via Earth Engine | Built-up surface |
+| River & road network | OpenStreetMap (`osmnx`) | Distance-to-river, road ranking |
+
+---
+
+## Roadmap (v2)
+
+- Replace the weighted overlay with an **XGBoost** model trained on assembled urban-waterlogging labels (traffic-police / PWD hotspot lists), with **spatial cross-validation**.
+- Add **rainfall** (GPM IMERG) as a trigger so risk becomes rainfall-conditioned.
+- Move from floodplain exposure toward true **pluvial street-flooding** prediction for motorist alerts.
+
+---
+
+*Built with Sentinel-1, Google Earth Engine, rasterio, geopandas, and matplotlib.*
